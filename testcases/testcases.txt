@@ -1,0 +1,63 @@
+TEST_QUESTIONS_50 = [
+
+    # ====== 1. CÂU HỎI ĐÚNG, PHỔ BIẾN ======
+    "Giấy phép lái xe hạng A1 điều khiển xe gì?",
+    "Điều kiện để được cấp giấy phép lái xe hạng B2 là gì?",
+    "Xe máy chạy quá tốc độ 10 km/h bị phạt bao nhiêu theo nghị định mới?",
+    "Khi nào phải bật đèn chiếu sáng gần khi đi trong hầm đường bộ?",
+    "Hành vi nào bị coi là chuyển làn đường sai quy định?",
+    "Định nghĩa tai nạn giao thông theo Luật 2024 là gì?",
+    "Khi nào được phép quay đầu xe ở khu dân cư?",
+    "Hành vi vượt bên phải trong trường hợp không được phép bị phạt bao nhiêu?",
+    "Thế nào là ùn tắc giao thông theo luật giao thông đường bộ?",
+    "Quy định về nhường đường tại nơi đường giao nhau được mô tả như thế nào?",
+    "Tốc độ tối đa cho phép của xe máy trên đường quốc lộ là bao nhiêu?",
+
+    # ====== 2. CÂU HỎI SAI CHỦ ĐỀ — BOT PHẢI TỪ CHỐI ======
+    "Có quy định nào về việc nuôi mèo trong chung cư hay không?",
+    "Luật giao thông có quy định về chiều cao tối thiểu của lan can ban công nhà ở riêng lẻ không?",
+    "Có quy định nào về việc xả rác nơi công cộng trong bộ luật này không?",
+    "Luật giao thông có nói gì về thuế trước bạ khi mua xe hơi không?",
+    "Có quy định về xử phạt uống rượu bia trong tiệc gia đình trong nghị định không?",
+    "Luật giao thông quy định gì về việc tổ chức tiệc cưới ngoài vỉa hè?",
+    "Có mức phạt nào cho hành vi đánh cờ bạc trên vỉa hè không?",
+    "Đi xe máy không mang giấy khai sinh có bị phạt không?",
+
+    # ====== 3. CÂU HỎI DÙNG TỪ LÓNG / DIỄN ĐẠT ĐỜI THƯỜNG ======
+    "Chạy xe bật đèn pha chói người ta trong khu dân cư bị lỗi gì?",
+    "Đi xe kiểu zig zag qua lại giữa các làn có phạm luật giao thông không?",
+    "Đi xe mà hú còi inh ỏi lúc 11 giờ đêm trong khu dân cư phạt bao nhiêu?",
+    "Đèo người ngồi sau mà không đội nón có bị ăn phạt không?",
+    "Chạy xe máy mà lạng lách đánh võng bị xử phạt như thế nào?",
+    "Chạy xe máy chở hàng cồng kềnh bị bắt thì phạt mấy tiền?",
+    "Quay đầu xe bừa bãi giữa đường có bị phạt không?",
+
+    # ====== 4. CÂU HỎI DÀI, ĐÁNH ĐỐ — KIỂM TRA SEMANTIC SEARCH ======
+    "Nếu tôi điều khiển xe máy và chở thêm 3 người nữa trên đoạn đường đông đúc thì theo nghị định mới tôi có vi phạm gì không?",
+    "Nếu xe tôi đang chạy trong khu vực dân cư có đèn đường mà tôi bật đèn chiếu xa thì có vi phạm gì theo quy định?",
+    "Trong trường hợp tôi tham gia giao thông trên làn hỗn hợp nhưng chuyển hướng không bật xi-nhan suốt quá trình rẽ thì mức phạt ra sao?",
+    "Khi điều khiển xe mô tô đi lùi mà không quan sát phía sau đầy đủ thì theo luật mới có bị phạt không?",
+    "Nếu đang chạy xe mà tôi bấm còi liên tục để vượt xe phía trước vào lúc 23h thì có bị xử phạt không?",
+
+    # ====== 5. CÂU HỎI YÊU CẦU TRÍCH DẪN ĐIỀU / KHOẢN ======
+    "Điều nào quy định về việc sử dụng đèn chiếu sáng khi trời mưa hoặc sương mù?",
+    "Điều nào mô tả hành vi dừng đỗ xe trên phần đường dành cho người đi bộ?",
+    "Khoản nào quy định về hành vi quay đầu xe trái phép tại nơi đường giao nhau?",
+    "Điều nào nói về tốc độ tối thiểu trên đường bộ có biển báo?",
+    "Điều nào quy định việc sử dụng tín hiệu khi vượt xe?",
+    "Có điều khoản nào quy định về việc không nhường đường ở nơi đường hẹp không?",
+
+    # ====== 6. CÂU HỎI NHẦM LẪN — KIỂM TRA BOT PHÂN LOẠI LUẬT vs NGHỊ ĐỊNH ======
+    "Khái niệm 'vượt xe bên phải' nằm trong Luật hay Nghị định?",
+    "Mức phạt cho hành vi vượt đèn đỏ nằm ở văn bản nào?",
+    "Quy định về việc chở theo 3 người trên xe máy nằm trong Luật hay Nghị định?",
+    "Nơi nào quy định về hành vi sử dụng còi trong khu dân cư từ 22h đến 5h?",
+    "Quy định tốc độ theo loại đường thuộc Luật hay Nghị định?",
+
+    # ====== 7. CÂU HỎI “THIẾU TỪ KHÓA” ======
+    "Nếu đi không đúng làn đường thì có bị xử phạt không?",
+    "Đi xe rẽ trái ở nơi cấm rẽ thì bị coi là gì?",
+    "Lùi xe mô tô ba bánh trên đường mà không quan sát phía sau có được không?",
+    "Xe không được quyền ưu tiên mà lắp đặt còi ưu tiên có phạm không?",
+    "Người lái xe chạy sát mép trái đường trong đô thị bị xử lý thế nào?",
+]

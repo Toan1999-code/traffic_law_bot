@@ -1,0 +1,10 @@
+flask
+python-docx
+chromadb
+openai
+python-dotenv
+transformers
+torch
+scipy
+soundfile
+librosa
