@@ -12,6 +12,7 @@ from scipy.io import wavfile
 from transformers import pipeline, VitsModel, AutoTokenizer
 
 app = Flask(__name__)
+chat_history = []
 
 # ==============================
 #  LOAD STT / TTS MODELS
@@ -1257,11 +1258,30 @@ def chat():
         return jsonify({"reply": "Vui lòng nhập câu hỏi hợp lệ."}), 400
 
     try:
-        reply = ask_traffic_law_bot(message, top_k=8)
+        reply = ask_traffic_law_bot(
+            question=message,
+            top_k=8,
+            chat_history=chat_history,
+        )
+
+        # Update chat history
+        chat_history.append({"role": "user", "content": message})
+        chat_history.append({"role": "assistant", "content": reply})
+
         return jsonify({"reply": reply})
+
     except Exception as e:
         return jsonify({"reply": f"Lỗi server: {str(e)}"}), 500
 
+@app.route("/reset_chat", methods=["POST"])
+def reset_chat():
+    """
+    Xóa lịch sử hội thoại phía server (chat_history),
+    để bot không nhớ các câu hỏi/ trả lời cũ nữa.
+    """
+    global chat_history
+    chat_history.clear()
+    return jsonify({"status": "ok", "message": "Đã reset lịch sử hội thoại server."})
 
 # ==============================
 #  STT ENDPOINT
@@ -1273,7 +1293,6 @@ def stt():
     if file is None:
         return jsonify({"error": "Thiếu file audio."}), 400
 
-    # lưu file webm tạm
     with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp_webm:
         tmp_webm.write(file.read())
         webm_path = tmp_webm.name
