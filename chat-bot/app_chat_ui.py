@@ -10,6 +10,19 @@ import subprocess
 import torch
 from scipy.io import wavfile
 from transformers import pipeline, VitsModel, AutoTokenizer
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# ==============================
+#  LOAD ENV + OPENAI CLIENT
+# ==============================
+
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY not found in .env")
+
+oa_client = OpenAI(api_key=OPENAI_API_KEY)
 
 app = Flask(__name__)
 chat_history = []
@@ -24,7 +37,6 @@ Bạn có thể đổi sang model khác nếu muốn, ví dụ:
 - "namphungdn134/whisper-small-vi"
 - "kiendt/whisper-small-vivos"
 """
-
 STT_MODEL_NAME = "namphungdn134/whisper-small-vi"
 
 stt_pipeline = pipeline(
@@ -33,14 +45,56 @@ stt_pipeline = pipeline(
 )
 
 """
-TTS: dùng facebook/mms-tts-vie (Tiếng Việt).
-Model này dùng VitsModel + AutoTokenizer.
+TTS: dùng facebook/mms-tts-vie (Tiếng Việt, VITS).
 """
 
 TTS_MODEL_NAME = "facebook/mms-tts-vie"
 
 tts_model = VitsModel.from_pretrained(TTS_MODEL_NAME)
 tts_tokenizer = AutoTokenizer.from_pretrained(TTS_MODEL_NAME)
+
+
+# ==============================
+#  LLM SPEECH NORMALIZER
+# ==============================
+
+def normalize_for_tts_vi(text: str) -> str:
+    """
+    Dùng LLM viết lại câu trả lời thành phiên bản dễ đọc bằng giọng nói tiếng Việt:
+    - Giữ nguyên nghĩa.
+    - Viết số, tiền, điều/khoản, ngày tháng... thành CHỮ tiếng Việt.
+    - Bỏ bớt ký hiệu khó đọc như '/', '.', '-' trong số.
+    - Chia câu dài thành các câu ngắn hơn nếu cần.
+    Nếu có lỗi khi gọi LLM, fallback về text gốc.
+    """
+    if not text.strip():
+        return text
+
+    system_msg = (
+        "Bạn là bộ chuyển đổi văn bản sang dạng dễ đọc bằng giọng nói tiếng Việt.\n"
+        "Nhiệm vụ của bạn:\n"
+        "- Giữ nguyên nghĩa câu trả lời.\n"
+        "- Viết toàn bộ số, số tiền, số điều/khoản, năm tháng... thành CHỮ tiếng Việt.\n"
+        "- Hạn chế dùng kí hiệu như '/', '.', '-' trong số; thay bằng cách đọc tự nhiên.\n"
+        "- Có thể chia câu dài thành 2–3 câu ngắn hơn cho dễ đọc.\n"
+        "- Không thêm nhận xét, không thêm lời giải thích; chỉ trả về phiên bản văn bản đã chỉnh sửa."
+    )
+
+    try:
+        resp = oa_client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.0,
+            messages=[
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": text},
+            ],
+        )
+        out = resp.choices[0].message.content.strip()
+        return out or text
+    except Exception:
+        # Nếu có lỗi (hết quota / mạng / ...), dùng luôn text gốc
+        return text
+
 
 # ==============================
 #  HTML + JS UI
@@ -943,6 +997,9 @@ HTML_PAGE = r"""
       renderCurrentConversation();
       const active = getActiveConversation();
       addWelcomeIfEmpty(active);
+
+      // Reset context phía server
+      fetch("/reset_chat", { method: "POST" }).catch(console.error);
     }
 
     // ==============================
@@ -1185,6 +1242,9 @@ HTML_PAGE = r"""
       }
       chatMessagesEl.innerHTML = "";
       addWelcomeIfEmpty(conv);
+
+      // reset context server
+      fetch("/reset_chat", { method: "POST" }).catch(console.error);
     });
 
     newChatBtn.addEventListener("click", () => {
@@ -1195,6 +1255,9 @@ HTML_PAGE = r"""
       renderChatList();
       renderCurrentConversation();
       addWelcomeIfEmpty(conv);
+
+      // reset context server cho cuộc trò chuyện mới
+      fetch("/reset_chat", { method: "POST" }).catch(console.error);
     });
 
     renameChatBtnEl.addEventListener("click", () => {
@@ -1264,7 +1327,7 @@ def chat():
             chat_history=chat_history,
         )
 
-        # Update chat history
+        # Update chat history (server-side, dùng cho rewrite_question_node)
         chat_history.append({"role": "user", "content": message})
         chat_history.append({"role": "assistant", "content": reply})
 
@@ -1273,15 +1336,14 @@ def chat():
     except Exception as e:
         return jsonify({"reply": f"Lỗi server: {str(e)}"}), 500
 
+
 @app.route("/reset_chat", methods=["POST"])
 def reset_chat():
-    """
-    Xóa lịch sử hội thoại phía server (chat_history),
-    để bot không nhớ các câu hỏi/ trả lời cũ nữa.
-    """
+    """Reset lịch sử chat phía server (cho LangGraph)."""
     global chat_history
-    chat_history.clear()
-    return jsonify({"status": "ok", "message": "Đã reset lịch sử hội thoại server."})
+    chat_history = []
+    return jsonify({"status": "ok"})
+
 
 # ==============================
 #  STT ENDPOINT
@@ -1293,6 +1355,7 @@ def stt():
     if file is None:
         return jsonify({"error": "Thiếu file audio."}), 400
 
+    # lưu file webm tạm
     with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp_webm:
         tmp_webm.write(file.read())
         webm_path = tmp_webm.name
@@ -1336,7 +1399,11 @@ def tts():
         return "Missing text", 400
 
     try:
-        inputs = tts_tokenizer(text, return_tensors="pt")
+        # Bước 1: chuẩn hóa text cho dễ đọc bằng giọng nói
+        norm_text = normalize_for_tts_vi(text)
+
+        # Bước 2: đưa vào MMS TTS
+        inputs = tts_tokenizer(norm_text, return_tensors="pt")
         with torch.no_grad():
             output = tts_model(**inputs).waveform
 

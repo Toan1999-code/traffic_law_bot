@@ -172,19 +172,24 @@ def build_system_prompt() -> str:
     """
     System prompt tổng quát:
     - Trợ lý chỉ trả lời dựa trên context.
-    - Phù hợp cho mọi loại tài liệu (luật, hướng dẫn, sổ tay...).
+    - Không được tự bịa thêm bối cảnh hội thoại trước đó.
     """
     return (
         "Bạn là trợ lý tra cứu tài liệu tiếng Việt.\n\n"
-        "Nguyên tắc:\n"
-        "- Chỉ được sử dụng thông tin có trong NGỮ CẢNH được cung cấp.\n"
-        "- Không được bịa ra dữ kiện, số liệu, quy định không xuất hiện trong ngữ cảnh.\n"
+        "Nguyên tắc chung:\n"
+        "- CHỈ được sử dụng thông tin có trong NGỮ CẢNH và CÂU HỎI hiện tại.\n"
+        "- KHÔNG được bịa ra dữ kiện, số liệu, quy định không xuất hiện trong ngữ cảnh.\n"
+        "- KHÔNG được bịa thêm về những gì người dùng 'đã nói trước đó' nếu trong câu hỏi "
+        "hiện tại không có, ví dụ:\n"
+        "  + Không tự nói: 'thông tin bạn đưa ra trước đó không chính xác' nếu không được nêu rõ "
+        "trong câu hỏi.\n"
+        "- Nếu muốn đính chính, hãy trả lời theo kiểu trung lập: 'Theo tài liệu trong ngữ cảnh, quy định là ...', "
+        "không phán xét người dùng đúng hay sai.\n"
         "- Nếu ngữ cảnh không đủ để trả lời chắc chắn, hãy nói rõ điều đó và gợi ý người dùng "
         "xem thêm tài liệu gốc hoặc hỏi chuyên gia.\n"
         "- Cố gắng trích dẫn lại tên tài liệu / nguồn / điều khoản nếu metadata có cho phép.\n"
-        "- Trả lời bằng tiếng Việt rõ ràng, dễ hiểu."
+        "- Trả lời bằng tiếng Việt hoặc tiếng Anh tùy theo câu hỏi của người dùng, rõ ràng, dễ hiểu."
     )
-
 
 def build_user_prompt(question: str, rewritten_question: str, results: Dict) -> str:
     """Tạo prompt user kèm context."""
@@ -215,12 +220,20 @@ def build_user_prompt(question: str, rewritten_question: str, results: Dict) -> 
     display_question = rewritten_question or question
 
     prompt = (
-        f"Ngữ cảnh (các trích đoạn từ tài liệu):\n\n"
+        "Ngữ cảnh (các trích đoạn từ tài liệu):\n\n"
         f"{context_text}\n\n"
-        f"---\n\n"
-        f"Câu hỏi của người dùng (đã chuẩn hóa nếu cần):\n{display_question}\n\n"
-        f"Hãy trả lời DỰA HOÀN TOÀN trên ngữ cảnh trên. "
-        f"Nếu ngữ cảnh không đủ thông tin thì nói rõ là bạn không chắc chắn."
+        "---\n\n"
+        "Câu hỏi của người dùng (đã chuẩn hóa nếu cần):\n"
+        f"{display_question}\n\n"
+        "YÊU CẦU TRẢ LỜI:\n"
+        "- Chỉ được trả lời dựa trên NGỮ CẢNH ở trên và chính câu hỏi này.\n"
+        "- Không được giả định rằng người dùng đã nêu ra một con số hoặc mức phạt cụ thể trước đó, "
+        "trừ khi nó xuất hiện rõ ràng trong câu hỏi hiện tại.\n"
+        "- Không được sử dụng các câu như 'thông tin bạn đưa ra trước đó không chính xác' nếu câu "
+        "hỏi hiện tại không chứa phát biểu đó. Thay vào đó, hãy trả lời trung lập: "
+        "'Theo trích đoạn tài liệu, quy định là ...'.\n"
+        "- Nếu ngữ cảnh không đủ thông tin thì hãy nói rõ là bạn không chắc chắn, "
+        "không được bịa luật hoặc suy đoán.\n"
     )
     return prompt
 
@@ -420,7 +433,7 @@ def generate_answer_node(state: RAGState) -> RAGState:
     refs = build_reference_block(results)
 
     if refs:
-        answer = f"{answer}\n\n{refs}"
+        answer = f"{answer}\n"
 
     state["answer"] = answer
     return state
